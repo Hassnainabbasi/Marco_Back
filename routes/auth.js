@@ -80,9 +80,12 @@ router.get("/me", (req, res) => {
 });
 
 router.get("/logout", (req, res) => {
-  req.logout(() => {
-    res.clearCookie("connect.sid");
-    res.json({ message: "Logged out" });
+  req.logout((err) => {
+    if (err) return res.status(500).json({ error: "Logout failed" });
+    req.session.destroy(() => {
+      res.clearCookie("connect.sid");
+      res.status(200).json({ message: "Logged out" });
+    });
   });
 });
 

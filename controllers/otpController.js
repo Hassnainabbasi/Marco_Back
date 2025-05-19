@@ -1,8 +1,8 @@
 import PhoneNumberModal from "../models/PhoneNumberModal.js";
+import otpStore from "../utlis/otpStores.js";
 import { sendSmsOtp } from "../utlis/sendWhatsAppOtp.js";
 import bcrypt from "bcrypt";
 
-const otpStore = {};
 
 export const sendOtpController = async (req, res) => {
   const { phoneNo } = req.body;
@@ -10,12 +10,13 @@ export const sendOtpController = async (req, res) => {
     return res.status(400).json({ message: "Phone number is required" });
   }
   const otp = Math.floor(1000 + Math.random() * 9000);
+  const expiresAt = Date.now() + 5 * 60 * 1000;
 
   try {
     await sendSmsOtp(phoneNo, otp);
 
-    otpStore[phoneNo] = otp;
-
+    otpStore[phoneNo] = {otp, expiresAt}
+    console.log(otpStore,"yeh hy man jar")
     res.status(200).json({ message: "OTP sent successfully!" });
   } catch (error) {
     console.error("Error sending OTP via UltraMsg:", error);
@@ -35,9 +36,8 @@ export const verifyOtpController = async (req, res) => {
       .json({ message: "OTP not generated. Please request OTP first." });
   }
 
-  if (storedOtp.toString() === otp.toString()) {
+  if (storedOtp.otp === Number(otp)) {
     delete otpStore[phoneNo];
-    console.log("Comparing OTPs:", storedOtp, otp);
     return res.status(200).json({ message: "OTP verified successfully!" });
   }
 

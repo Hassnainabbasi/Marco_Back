@@ -6,10 +6,17 @@ import jwt from "jsonwebtoken";
 import verifyToken from "../middleware/verify-token.js";
 import PhoneNumberModal from "../models/PhoneNumberModal.js";
 import Authorization from "../middleware/authorization.js";
+import otpStore from "../utlis/otpStores.js";
 
 const router = express.Router();
 
-router.use(cors());
+router.use(
+  cors({
+    origin: "http://localhost:5173", // frontend ka URL
+    credentials: true, // cookies allow karne ke liye
+  })
+);
+
 router.post("/register", async (req, res) => {
   try {
     console.log(req.body);
@@ -76,6 +83,7 @@ router.post("/check-email", async (req, res) => {
 
 router.post("/check-phone", async (req, res) => {
   const { phoneNo } = req.body;
+  console.log(req.body)
   const user = await PhoneNumberModal.findOne({ phoneNo });
   res.json({ exists: !!user });
 });
@@ -153,7 +161,7 @@ router.post("/login-phone", async (req, res) => {
     }
 
     const hashpassword = await bcrypt.compare(password, user.password);
-    console.log(hashpassword)
+    console.log(hashpassword);
     if (!hashpassword) {
       return res.status(500).json({ message: "Incorrect Password" });
     }
@@ -175,6 +183,45 @@ router.post("/login-phone", async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+  }
+});
+
+router.post("/reset-password", async (req, res) => {
+  const { phoneNo, otp, newPassword } = req.body;
+  console.log(req.body)
+  const storedOtp = otpStore[phoneNo];
+
+  console.log(storedOtp);
+  if (!storedOtp) {
+    return res
+      .status(400)
+      .json({ message: "OTP not found. Please try again." });
+  }
+
+    if (Date.now() > storedOtp.expiresAt) {
+      return res.status(400).json({ message: "OTP has expired." });
+    }
+
+    if (String(storedOtp.otp) !== String(otp)) {
+      return res.status(400).json({ message: "Invalid OTP." });
+    }
+
+  try {
+    const user = await PhoneNumberModal.findOne({ phoneNo });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    user.password = hashedPassword;
+    await user.save();
+
+    delete otpStore[phoneNo]; // clear OTP
+
+    return res.status(200).json({ message: "Password reset successfully." });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    return res.status(500).json({ message: "Something went wrong." });
   }
 });
 

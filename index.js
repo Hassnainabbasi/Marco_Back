@@ -11,7 +11,12 @@ import session from "express-session";
 
 const app = express();
 const PORT = 3000;
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173", // frontend ka URL
+    credentials: true, // cookies allow karne ke liye
+  })
+);
 app.use(express.json());
 app.use("/users", registerRoutes)
 app.post('/send-otp', sendOtpController)
@@ -48,3 +53,4 @@ mongoose
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
+
