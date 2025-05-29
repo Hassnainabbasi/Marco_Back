@@ -3,6 +3,7 @@ import express from "express";
 import passport from "passport";
 import querystring from "querystring";
 import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
 
 dotenv.config();
 
@@ -59,7 +60,22 @@ router.get(
     session: true,
   }),
   (req, res) => {
-    res.redirect("http://localhost:5173/"); 
+    const token = jwt.sign(
+      {
+        id: req.user._id,
+        email: req.user.email,
+        name: req.user.name,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false, 
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    res.redirect("http://localhost:5173/");
   }
 );
 

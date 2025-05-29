@@ -12,8 +12,8 @@ const router = express.Router();
 
 router.use(
   cors({
-    origin: "http://localhost:5173", // frontend ka URL
-    credentials: true, // cookies allow karne ke liye
+    origin: "http://localhost:5173",
+    credentials: true,
   })
 );
 
