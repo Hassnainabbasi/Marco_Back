@@ -2,6 +2,7 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import ContinueGoogleModel from "../models/ContinueGoogleModels.js";
 import dotenv from "dotenv";
+import AllUsers from "../models/AllUserModel.js";
 
 dotenv.config();
 
@@ -10,7 +11,7 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser((id, done) => {
-  ContinueGoogleModel.findById(id).then((user) => done(null, user));
+  AllUsers.findById(id).then((user) => done(null, user));
 });
 
 passport.use(
@@ -22,12 +23,12 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        const existingUser = await ContinueGoogleModel.findOne({
+        const existingUser = await AllUsers.findOne({
           googleId: profile.id,
         });
         if (existingUser) return done(null, existingUser);
 
-        const newUser = await ContinueGoogleModel.create({
+        const newUser = await AllUsers.create({
           googleId: profile.id,
           displayName: profile.displayName,
           email: profile.emails[0].value,
